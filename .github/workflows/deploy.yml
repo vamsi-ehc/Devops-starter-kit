@@ -1,0 +1,31 @@
+name: Deploy Next.js to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.1
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Copy files to EC2
+        run: |
+          rsync -avz --exclude '.git' ./ ubuntu@34.229.78.142:/home/ubuntu/Devops-starter-kit/
+
+      - name: Build and restart Docker
+        run: |
+          ssh ubuntu@34.229.78.142 << 'EOF'
+            cd /home/ubuntu/Devops-starter-kit
+            docker-compose build
+            docker-compose up -d
+          EOF
